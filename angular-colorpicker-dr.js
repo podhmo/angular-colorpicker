@@ -77,8 +77,8 @@
   function Driver(){
   }
   Driver.prototype.init = DriverInit;
-  Driver.prototype.bindClick = function click(pd){
-    this.$el.bind("click", function (ev) {
+  Driver.prototype.bindAction = function action(typ, pd){
+    this.$el.bind(typ, function (ev) {
       //show color picker beneath the input
       var rect = getRect(ev.target);
       var top = rect.top + this.$window.pageYOffset;
@@ -97,9 +97,9 @@
   function BodyDriver(){
   }
   BodyDriver.prototype.init = DriverInit;
-  BodyDriver.prototype.bindClick = function click(){
+  BodyDriver.prototype.bindAction = function action(typ){
     //when clicking somewhere on the screen / body -> hide the color picker
-    this.$el.bind("click", function () {
+    this.$el.bind(typ, function () {
       var i,
           docChildren = this.$el.children();
       for (i = 0; i < docChildren.length; i++) {
@@ -114,8 +114,8 @@
   }
   PickerDriver.prototype.init = DriverInit;
   // opts = {cont: Function, propagate: boolean}
-  PickerDriver.prototype.bindClick = function click(ngModel, opts){
-    this.$el.find('cp-color').on('click', function (ev) {
+  PickerDriver.prototype.bindAction = function action(typ, ngModel, opts){
+    this.$el.find('cp-color').on(typ, function (ev) {
       var color = angular.element(ev.target).attr('color');
       ngModel.$setViewValue(color);
       if (opts.cont) {
@@ -137,8 +137,8 @@
   TriggerDriver.prototype.init = DriverInit;
 
   // opts = {findWrapper: Function}
-  TriggerDriver.prototype.bindClick = function click(pd, opts) {
-    this.$el.bind("click", function (ev) {
+  TriggerDriver.prototype.bindAction = function action(typ, pd, opts) {
+    this.$el.bind(typ, function (ev) {
       var wrapper = angular.element(ev.target);
       if (opts.findWrapper) {
         wrapper = opts.findWrapper(wrapper);
@@ -278,9 +278,9 @@
 
           template = templateHidden + template;
           pd = mutator.fromElement(PickerDriver, angular.element(template));
-          pd.bindClick(ngModel, {propagate: true});
+          pd.bindAction('click', ngModel, {propagate: true});
           mutator.append(bd, pd);
-          td.bindClick(pd, {findWrapper: function($target) {
+          td.bindAction('click', pd, {findWrapper: function($target) {
             return closest($target, 'color-picker-wrapper');
           }});
         } else {
@@ -288,16 +288,16 @@
 
             template = templateHidden + template;
             pd = mutator.fromElement(PickerDriver, angular.element(template));
-            pd.bindClick(ngModel, {propagate: false, cont: function(color){
+            pd.bindAction('click', ngModel, {propagate: false, cont: function(color){
               d.syncColor(color);
             }});
             mutator.append(bd, pd);
-            d.bindClick(pd);
+            d.bindAction('click', pd);
 
             td = mutator.fromTemplate(TriggerDriver, templateTinyTrigger);
             mutator.append(d, td);
             //show color picker beneath the input
-            td.bindClick(pd, {findWrapper: function($target){
+            td.bindAction('click', pd, {findWrapper: function($target){
               var $wrapper = closest($target, 'color-picker-wrapper');
               return previous($wrapper[0]);
             }});
@@ -307,10 +307,10 @@
             template = templateInline + template;
             pd = mutator.fromElement(PickerDriver, angular.element(template));
             mutator.replaceWith(d, pd);
-            pd.bindClick(ngModel, {propagate: false});
+            pd.bindAction('click', ngModel, {propagate: false});
           }
         }
-        bd.bindClick();
+        bd.bindAction('click');
       }
     };
   };
