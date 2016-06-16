@@ -65,6 +65,23 @@
       ev.stopPropagation();
     }.bind(this));
   };
+
+  function BodyDriver(){
+  }
+  BodyDriver.prototype.init = DriverInit;
+  BodyDriver.prototype.bindClick = function click(){
+    //when clicking somewhere on the screen / body -> hide the color picker
+    this.$el.bind("click", function () {
+      var i,
+          docChildren = this.$el.find('body').children();
+      for (i = 0; i < docChildren.length; i++) {
+        if (docChildren[i].className.indexOf('color-picker-wrapper body') !== -1) {
+          angular.element(docChildren[i]).addClass('hide');
+        }
+      }
+    }.bind(this));
+  };
+
   function PickerDriver(){
   }
   PickerDriver.prototype.init = DriverInit;
@@ -246,7 +263,7 @@
             template = cpTemplate,
             templateTinyTrigger = cpTinyTemplate;
         var d = new Driver().init(element, $window, scope);
-        var pd,td;
+        var pd,td, bd;
         if (scope.tinyTrigger !== undefined && scope.tinyTrigger === 'true') {
           templateTinyTrigger = templateTinyTrigger.replace('picker-icon', 'picker-icon trigger');
           td = new TTriggerDriver().init($compile(templateTinyTrigger)(scope), $window, scope);
@@ -279,16 +296,8 @@
             pd.bindClick(ngModel, true);
           }
         }
-        //when clicking somewhere on the screen / body -> hide the color picker
-        $document.bind("click", function (ev) {
-          var i,
-              docChildren = $document.find('body').children();
-          for (i = 0; i < docChildren.length; i++) {
-            if (docChildren[i].className.indexOf('color-picker-wrapper body') !== -1) {
-              angular.element(docChildren[i]).addClass('hide');
-            }
-          }
-        });
+        bd = new BodyDriver().init($document, $window, scope);
+        bd.bindClick();
       }
     };
   };
