@@ -74,8 +74,9 @@
     this.$el.bind("click", function (ev) {
       //show color picker beneath the input
       var height = ev.target.getBoundingClientRect().height,
-          top = ev.target.getBoundingClientRect().top + this.$window.pageYOffset,
+          top = ev.target.getBoundingClientRect().top,
           left = ev.target.getBoundingClientRect().left;
+      top = top + this.$window.pageYOffset;
       pd.activate(top, left, height);
       ev.stopPropagation();
     }.bind(this));
@@ -135,16 +136,14 @@
   function TTriggerDriver(){
   }
   TTriggerDriver.prototype.init = DriverInit;
-  TTriggerDriver.prototype.bindClick = function click(elementColorPicker) {
+  TTriggerDriver.prototype.bindClick = function click(pd) {
     this.$el.bind("click", function (ev) {
       var wrapper = closest(angular.element(ev.target), 'color-picker-wrapper'),
           top = wrapper[0].getBoundingClientRect().top,
+          left = wrapper[0].getBoundingClientRect().left,
           height = wrapper[0].getBoundingClientRect().height;
-          top = top + this.$window.pageYOffset;
-
-      elementColorPicker.removeClass('hide');
-      elementColorPicker[0].style.top = top + height + 'px';
-      elementColorPicker[0].style.left = wrapper[0].getBoundingClientRect().left + 'px';
+      top = top + this.$window.pageYOffset;
+      pd.activate(top, left, height);
       ev.stopPropagation();
     }.bind(this));
   };
@@ -152,15 +151,14 @@
   }
   TriggerDriver.prototype.init = DriverInit;
   TriggerDriver.prototype.bindClick = function click(pd) {
-    // TODO: remove elementColorPicker
     this.$el.bind("click", function (ev) {
       //show color picker beneath the input
       var $wrapper = closest(angular.element(ev.target), 'color-picker-wrapper'),
           wrapperPrev = previous($wrapper[0]),
           top = wrapperPrev.getBoundingClientRect().top,
+          left = wrapperPrev.getBoundingClientRect().left,
           height = wrapperPrev.getBoundingClientRect().height;
-          top = top + this.$window.pageYOffset;
-      var left = wrapperPrev.getBoundingClientRect().left;
+      top = top + this.$window.pageYOffset;
       pd.activate(top, left, height);
       ev.stopPropagation();
     }.bind(this));
