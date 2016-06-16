@@ -63,10 +63,10 @@
   }
 
   ViewMutator.prototype.append = function(srcView, targetView){
-    srcView.$el.append(targetView.$el);
+    return srcView.$el.append(targetView.$el);
   };
   ViewMutator.prototype.replaceWith = function(srcView, targetView){
-    srcView.$el.replaceWith(targetView.$el);
+    return srcView.$el.replaceWith(targetView.$el);
   };
   ViewMutator.prototype.fromTemplate = function(FN, template){
     var el = this.$compile(template)(this.scope);
@@ -295,48 +295,41 @@
           var template = tmpls[1];
 
           var mutator = new ViewMutator($compile, $window, scope);
-          var d = new View().init(element, $window, scope);
+          var d = mutator.fromElement(View, element);
           var pd,td;
           var bd = mutator.fromElement(BodyView, angular.element(document.body));
           if (scope.tinyTrigger !== undefined && scope.tinyTrigger === 'true') {
-            templateTinyTrigger = templateTinyTrigger.replace('picker-icon', 'picker-icon trigger');
             td = mutator.fromTemplate(TriggerView, templateTinyTrigger);
-            mutator.replaceWith(d, td);
+            mutator.replaceWith(d, td).addClass("trigger");
 
-            template = templateHidden + template;
-            pd = mutator.fromElement(PickerView, angular.element(template));
+            pd = mutator.fromElement(PickerView, angular.element(templateHidden + template));
             pd.bindAction('click', ngModel, {propagate: true});
             mutator.append(bd, pd);
             td.bindAction('click', pd, {findWrapper: function($target) {
               return closest($target, 'color-picker-wrapper');
             }});
+          } else if (element[0].tagName === 'INPUT') {
+            pd = mutator.fromElement(PickerView, angular.element(templateHidden + template));
+            pd.bindAction('click', ngModel, {propagate: false, cont: function(color){
+              d.syncColor(color);
+            }});
+            mutator.append(bd, pd);
+            //show color picker beneath the input
+            d.bindAction('click', pd);
+
+            td = mutator.fromTemplate(TriggerView, templateTinyTrigger);
+            mutator.append(d, td);
+            //show color picker beneath the input
+            td.bindAction('click', pd, {findWrapper: function($target){
+              var $wrapper = closest($target, 'color-picker-wrapper');
+              return previous($wrapper[0]);
+            }});
+            $compile(content)(scope);
           } else {
-            if (element[0].tagName === 'INPUT') {
-
-              template = templateHidden + template;
-              pd = mutator.fromElement(PickerView, angular.element(template));
-              pd.bindAction('click', ngModel, {propagate: false, cont: function(color){
-                d.syncColor(color);
-              }});
-              mutator.append(bd, pd);
-              //show color picker beneath the input
-              d.bindAction('click', pd);
-
-              td = mutator.fromTemplate(TriggerView, templateTinyTrigger);
-              mutator.append(d, td);
-              //show color picker beneath the input
-              td.bindAction('click', pd, {findWrapper: function($target){
-                var $wrapper = closest($target, 'color-picker-wrapper');
-                return previous($wrapper[0]);
-              }});
-              $compile(content)(scope);
-            } else {
-              //replace element with the color picker
-              template = templateInline + template;
-              pd = mutator.fromElement(PickerView, angular.element(template));
-              mutator.replaceWith(d, pd);
-              pd.bindAction('click', ngModel, {propagate: false});
-            }
+            //replace element with the color picker
+            pd = mutator.fromElement(PickerView, angular.element(templateInline + template));
+            mutator.replaceWith(d, pd);
+            pd.bindAction('click', ngModel, {propagate: false});
           }
           //when clicking somewhere on the screen / body -> hide the color picker
           bd.bindAction('click');
