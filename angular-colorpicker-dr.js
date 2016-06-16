@@ -52,14 +52,81 @@
   function Driver(){
   }
   Driver.prototype.init = DriverInit;
-
+  Driver.prototype.bindClick = function click(elementColorPicker){
+    // TODO: remove elementColorPicker
+    this.$el.bind("click", function (ev) {
+      //show color picker beneath the input
+      var top = ev.target.getBoundingClientRect().top,
+          height = ev.target.getBoundingClientRect().height;
+          top = top + this.$window.pageYOffset;
+      elementColorPicker.removeClass('hide');
+      elementColorPicker[0].style.top = top + height + 'px';
+      elementColorPicker[0].style.left = ev.target.getBoundingClientRect().left + 'px';
+      ev.stopPropagation();
+    }.bind(this));
+  };
   function PickerDriver(){
   }
   PickerDriver.prototype.init = DriverInit;
+  PickerDriver.prototype.bindClick = function click(ngModel, element){
+    // TODO: remove element;
+    this.$el.find('cp-color').on('click', function (ev) {
+      var color = angular.element(ev.target).attr('color');
+      ngModel.$setViewValue(color);
+      if (this.scope.colorMe !== undefined && this.scope.colorMe === 'true') {
+        element[0].style.backgroundColor = color;
+      } else {
+        element.val(color);
+      }
+    }.bind(this));
+  };
+  function TPickerDriver(){
+  }
+  TPickerDriver.prototype.init = DriverInit;
+  TPickerDriver.prototype.bindClick = function click(ngModel, stop){
+    this.$el.find('cp-color').on('click', function (ev) {
+      ngModel.$setViewValue(angular.element(ev.target).attr('color'));
+      if(stop){
+        ev.stopPropagation();
+      }
+    });
+  };
 
+  function TTriggerDriver(){
+  }
+  TTriggerDriver.prototype.init = DriverInit;
+  TTriggerDriver.prototype.bindClick = function click(elementColorPicker) {
+    this.$el.bind("click", function (ev) {
+      var wrapper = closest(angular.element(ev.target), 'color-picker-wrapper'),
+          top = wrapper[0].getBoundingClientRect().top,
+          height = wrapper[0].getBoundingClientRect().height;
+          top = top + this.$window.pageYOffset;
+
+      elementColorPicker.removeClass('hide');
+      elementColorPicker[0].style.top = top + height + 'px';
+      elementColorPicker[0].style.left = wrapper[0].getBoundingClientRect().left + 'px';
+      ev.stopPropagation();
+    }.bind(this));
+  };
   function TriggerDriver(){
   }
   TriggerDriver.prototype.init = DriverInit;
+  TriggerDriver.prototype.bindClick = function click(elementColorPicker) {
+    // TODO: remove elementColorPicker
+    this.$el.bind("click", function (ev) {
+      //show color picker beneath the input
+      var $wrapper = closest(angular.element(ev.target), 'color-picker-wrapper'),
+          wrapperPrev = previous($wrapper[0]),
+          top = wrapperPrev.getBoundingClientRect().top,
+          height = wrapperPrev.getBoundingClientRect().height;
+          top = top + this.$window.pageYOffset;
+
+      elementColorPicker.removeClass('hide');
+      elementColorPicker[0].style.top = top + height + 'px';
+      elementColorPicker[0].style.left = wrapperPrev.getBoundingClientRect().left + 'px';
+      ev.stopPropagation();
+    }.bind(this));
+  };
 
   var cpTemplate = '<div class="color-picker-row-wrapper">' +
       '<div class="color-picker-row">' +
@@ -177,91 +244,39 @@
             templateHidden = '<div class="color-picker-wrapper body hide">',
             templateInline = '<div class="color-picker-wrapper">',
             template = cpTemplate,
-            templateTinyTrigger = cpTinyTemplate,
-            elementTinyTrigger,
-            elementColorPicker;
+            templateTinyTrigger = cpTinyTemplate;
         var d = new Driver().init(element, $window, scope);
-        var pd; 
+        var pd,td;
         if (scope.tinyTrigger !== undefined && scope.tinyTrigger === 'true') {
           templateTinyTrigger = templateTinyTrigger.replace('picker-icon', 'picker-icon trigger');
-          elementTinyTrigger = $compile(templateTinyTrigger)(scope);
-          d.$el.replaceWith(elementTinyTrigger);
+          td = new TTriggerDriver().init($compile(templateTinyTrigger)(scope), $window, scope);
+          d.$el.replaceWith(td.$el);
 
           template = templateHidden + template;
-          elementColorPicker = angular.element(template);
-          pd = new PickerDriver().init(elementColorPicker, $window, scope);
-          pd.$el.find('cp-color').on('click', function (ev) {
-            ngModel.$setViewValue(angular.element(ev.target).attr('color'));
-          });
-          angular.element(document.body).append(elementColorPicker);
-
-          elementTinyTrigger.bind("click", function (ev) {
-            var wrapper = closest(angular.element(ev.target), 'color-picker-wrapper'),
-                top = wrapper[0].getBoundingClientRect().top,
-                height = wrapper[0].getBoundingClientRect().height;
-            top = top + $window.pageYOffset;
-
-            elementColorPicker.removeClass('hide');
-            elementColorPicker[0].style.top = top + height + 'px';
-            elementColorPicker[0].style.left = wrapper[0].getBoundingClientRect().left + 'px';
-            ev.stopPropagation();
-          });
-
+          pd = new TPickerDriver().init(angular.element(template), $window, scope);
+          pd.bindClick(ngModel, false);
+          angular.element(document.body).append(pd.$el);
+          td.bindClick(pd.$el);
         } else {
           if (element[0].tagName === 'INPUT') {
 
             template = templateHidden + template;
-            elementColorPicker = angular.element(template);
-            pd = new PickerDriver().init(elementColorPicker, $window, scope);
-            elementColorPicker.find('cp-color').on('click', function (ev) {
-              var color = angular.element(ev.target).attr('color');
-              ngModel.$setViewValue(color);
-              if (scope.colorMe !== undefined && scope.colorMe === 'true') {
-                element[0].style.backgroundColor = color;
-              } else {
-                element.val(color);
-              }
-            });
-            angular.element(document.body).append(elementColorPicker);
+            pd = new PickerDriver().init(angular.element(template), $window, scope);
+            pd.bindClick(ngModel, d.$el);
+            angular.element(document.body).append(pd.$el);
+            d.bindClick(pd.$el);
 
-            element.bind("click", function (ev) {
-              //show color picker beneath the input
-              var top = ev.target.getBoundingClientRect().top,
-                  height = ev.target.getBoundingClientRect().height;
-              top = top + $window.pageYOffset;
-
-              elementColorPicker.removeClass('hide');
-              elementColorPicker[0].style.top = top + height + 'px';
-              elementColorPicker[0].style.left = ev.target.getBoundingClientRect().left + 'px';
-              ev.stopPropagation();
-            });
-
-            elementTinyTrigger = $compile(templateTinyTrigger)(scope);
-            element.after(elementTinyTrigger);
-            elementTinyTrigger.bind("click", function (ev) {
-              //show color picker beneath the input
-              var $wrapper = closest(angular.element(ev.target), 'color-picker-wrapper'),
-                  wrapperPrev = previous($wrapper[0]),
-                  top = wrapperPrev.getBoundingClientRect().top,
-                  height = wrapperPrev.getBoundingClientRect().height;
-              top = top + $window.pageYOffset;
-
-              elementColorPicker.removeClass('hide');
-              elementColorPicker[0].style.top = top + height + 'px';
-              elementColorPicker[0].style.left = wrapperPrev.getBoundingClientRect().left + 'px';
-              ev.stopPropagation();
-            });
-
+            // element tiny trigger
+            td = new TriggerDriver().init($compile(templateTinyTrigger)(scope), $window, scope);
+            d.$elafter(td.$el);
+            td.bindClick();
             $compile(content)(scope);
           } else {
             //replace element with the color picker
             template = templateInline + template;
-            elementColorPicker = $compile(template)(scope);
-            element.replaceWith(elementColorPicker);
-            elementColorPicker.find('cp-color').on('click', function (ev) {
-              ngModel.$setViewValue(angular.element(ev.target).attr('color'));
-              ev.stopPropagation();
-            });
+            pd = new TPickerDriver().init(angular.element(template), $window, scope);
+            d.$el.replaceWith(pd.$el);
+            pd.bindClick(ngModel, true);
           }
         }
         //when clicking somewhere on the screen / body -> hide the color picker
