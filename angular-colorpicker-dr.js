@@ -42,9 +42,9 @@
     return elem;
   }
 
-  function DriverInit($window, $el, scope){
-    this.$window = $window;
+  function DriverInit($el, $window, scope){
     this.$el = $el;
+    this.$window = $window;
     this.scope = scope;
     return this;
   }
