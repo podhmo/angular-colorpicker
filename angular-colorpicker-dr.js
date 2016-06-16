@@ -49,20 +49,23 @@
     return this;
   }
 
-  function DOMMutator($compile, $window, scope){
+  function DriverMutator($compile, $window, scope){
     this.$compile = $compile;
     this.$window = $window;
     this.scope = scope;
   }
 
-  DOMMutator.prototype.append = function(srcDriver, targetDriver){
+  DriverMutator.prototype.append = function(srcDriver, targetDriver){
     srcDriver.$el.append(targetDriver.$el);
   };
-  DOMMutator.prototype.replaceWith = function(srcDriver, targetDriver){
+  DriverMutator.prototype.replaceWith = function(srcDriver, targetDriver){
     srcDriver.$el.replaceWith(targetDriver.$el);
   };
-  DOMMutator.prototype.fromTemplate = function(template, FN){
+  DriverMutator.prototype.fromTemplate = function(FN, template){
     var el = this.$compile(template)(this.scope);
+    return this.fromElement(FN, el);
+  };
+  DriverMutator.prototype.fromElement = function(FN, el){
     return new FN().init(el, this.$window, this.scope);
   };
 
@@ -281,17 +284,17 @@
             templateInline = '<div class="color-picker-wrapper">',
             template = cpTemplate,
             templateTinyTrigger = cpTinyTemplate;
-        var mutator = new DOMMutator($compile, $window, scope);
+        var mutator = new DriverMutator($compile, $window, scope);
         var d = new Driver().init(element, $window, scope);
         var pd,td;
-        var bd = new BodyDriver().init(angular.element(document.body), $window, scope);
+        var bd = mutator.fromElement(BodyDriver, angular.element(document.body));
         if (scope.tinyTrigger !== undefined && scope.tinyTrigger === 'true') {
           templateTinyTrigger = templateTinyTrigger.replace('picker-icon', 'picker-icon trigger');
-          td = new TTriggerDriver().init($compile(templateTinyTrigger)(scope), $window, scope);
+          td = mutator.fromTemplate(TTriggerDriver, templateTinyTrigger);
           mutator.replaceWith(d, td);
 
           template = templateHidden + template;
-          pd = new TPickerDriver().init(angular.element(template), $window, scope);
+          pd = mutator.fromElement(TPickerDriver, angular.element(template));
           pd.bindClick(ngModel, false);
           mutator.append(bd, pd);
           td.bindClick(pd);
@@ -299,20 +302,20 @@
           if (element[0].tagName === 'INPUT') {
 
             template = templateHidden + template;
-            pd = new PickerDriver().init(angular.element(template), $window, scope);
+            pd = mutator.fromElement(PickerDriver, angular.element(template));
             pd.bindClick(ngModel, d);
             mutator.append(bd, pd);
             d.bindClick(pd);
 
             // element tiny trigger
-            td = new TriggerDriver().init($compile(templateTinyTrigger)(scope), $window, scope);
+            td = mutator.fromTemplate(TriggerDriver, templateTinyTrigger);
             mutator.append(d, td);
             td.bindClick();
             $compile(content)(scope);
           } else {
             //replace element with the color picker
             template = templateInline + template;
-            pd = new TPickerDriver().init(angular.element(template), $window, scope);
+            mutator.fromElement(TPickerDriver, angular.element(template));
             mutator.replaceWith(d, pd);
             pd.bindClick(ngModel, true);
           }
