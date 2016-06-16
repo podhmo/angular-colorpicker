@@ -4,12 +4,14 @@
 * Angular Color Picker
 *
 * File:        angular-colorpicker-dr.js
-* Version:     0.1.0
+* Version:     0.1.0+separation
 *
-* Author:      Daniel Reznick
-* Info:        https://github.com/vedmack/angular-colorpicker
-* Contact:     vedmack@gmail.com
-* Twitter:	   @danielreznick
+* Author:      podhmo
+* Original Author: Daniel Reznick
+* Info:        https://github.com/podhmo/angular-colorpicker
+* Original Info: https://github.com/vedmack/angular-colorpicker
+* Original Contact:     vedmack@gmail.com
+* Original Twitter:	   @danielreznick
 * Q&A		   http://stackoverflow.com
 *
 * Copyright 2015 Daniel Reznick, all rights reserved.
