@@ -113,14 +113,15 @@
   function PickerDriver(){
   }
   PickerDriver.prototype.init = DriverInit;
-  PickerDriver.prototype.bindClick = function click(ngModel, stop, cont){
+  // opts = {cont: Function, propagate: boolean}
+  PickerDriver.prototype.bindClick = function click(ngModel, opts){
     this.$el.find('cp-color').on('click', function (ev) {
       var color = angular.element(ev.target).attr('color');
       ngModel.$setViewValue(color);
-      if (cont) {
-        cont(color);
+      if (opts.cont) {
+        opts.cont(color);
       }
-      if(stop){
+      if(!opts.propagate){
         ev.stopPropagation();
       }
     });
@@ -131,27 +132,18 @@
     this.$el[0].style.left = left + 'px';
   };
 
-  function TTriggerDriver(){
-  }
-  TTriggerDriver.prototype.init = DriverInit;
-  TTriggerDriver.prototype.bindClick = function click(pd) {
-    this.$el.bind("click", function (ev) {
-      var wrapper = closest(angular.element(ev.target), 'color-picker-wrapper'),
-          rect = getRect(wrapper[0]);
-      var top = rect.top + this.$window.pageYOffset;
-      pd.activate(top, rect.left, rect.height);
-      ev.stopPropagation();
-    }.bind(this));
-  };
   function TriggerDriver(){
   }
   TriggerDriver.prototype.init = DriverInit;
-  TriggerDriver.prototype.bindClick = function click(pd) {
+
+  // opts = {findWrapper: Function}
+  TriggerDriver.prototype.bindClick = function click(pd, opts) {
     this.$el.bind("click", function (ev) {
-      //show color picker beneath the input
-      var $wrapper = closest(angular.element(ev.target), 'color-picker-wrapper'),
-          wrapperPrev = previous($wrapper[0]),
-          rect = getRect(wrapperPrev);
+      var wrapper = angular.element(ev.target);
+      if (opts.findWrapper) {
+        wrapper = opts.findWrapper(wrapper);
+      }
+      var rect = getRect(wrapper[0]);
       var top = rect.top + this.$window.pageYOffset;
       pd.activate(top, rect.left, rect.height);
       ev.stopPropagation();
@@ -281,36 +273,41 @@
         var bd = mutator.fromElement(BodyDriver, angular.element(document.body));
         if (scope.tinyTrigger !== undefined && scope.tinyTrigger === 'true') {
           templateTinyTrigger = templateTinyTrigger.replace('picker-icon', 'picker-icon trigger');
-          td = mutator.fromTemplate(TTriggerDriver, templateTinyTrigger);
+          td = mutator.fromTemplate(TriggerDriver, templateTinyTrigger);
           mutator.replaceWith(d, td);
 
           template = templateHidden + template;
           pd = mutator.fromElement(PickerDriver, angular.element(template));
-          pd.bindClick(ngModel, false);
+          pd.bindClick(ngModel, {propagate: true});
           mutator.append(bd, pd);
-          td.bindClick(pd);
+          td.bindClick(pd, {findWrapper: function($target) {
+            return closest($target, 'color-picker-wrapper');
+          }});
         } else {
           if (element[0].tagName === 'INPUT') {
 
             template = templateHidden + template;
             pd = mutator.fromElement(PickerDriver, angular.element(template));
-            pd.bindClick(ngModel, true, function(color){
+            pd.bindClick(ngModel, {propagate: false, cont: function(color){
               d.syncColor(color);
-            });
+            }});
             mutator.append(bd, pd);
             d.bindClick(pd);
 
-            // element tiny trigger
             td = mutator.fromTemplate(TriggerDriver, templateTinyTrigger);
             mutator.append(d, td);
-            td.bindClick();
+            //show color picker beneath the input
+            td.bindClick(pd, {findWrapper: function($target){
+              var $wrapper = closest($target, 'color-picker-wrapper');
+              return previous($wrapper[0]);
+            }});
             $compile(content)(scope);
           } else {
             //replace element with the color picker
             template = templateInline + template;
             pd = mutator.fromElement(PickerDriver, angular.element(template));
             mutator.replaceWith(d, pd);
-            pd.bindClick(ngModel, true);
+            pd.bindClick(ngModel, {propagate: false});
           }
         }
         bd.bindClick();
