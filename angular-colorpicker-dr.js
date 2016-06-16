@@ -21,6 +21,36 @@
 */
 (function () {
   'use strict';
+  function previous(elem) {
+    if (elem.previousElementSibling) {
+      return elem.previousElementSibling;
+    }
+    while (elem = elem.previousSibling) {
+      if (elem.nodeType === 1) {
+        return elem;
+      }
+    }
+  }
+  function closest(elem, cls) {
+    var found = false;
+    while (elem.parent() !== undefined && found === false) {
+      if (elem.parent().hasClass(cls)) {
+        found = true;
+      }
+      elem = elem.parent();
+    }
+    return elem;
+  }
+
+  function Driver(){
+  };
+  Driver.prototype.init = function init(){
+  }
+  function TinyDriver(){
+  };
+  TinyDriver.prototype.init = function init(){
+  }
+
   var cpTemplate = '<div class="color-picker-row-wrapper">' +
       '<div class="color-picker-row">' +
       '<cp-color class="color-picker navy" color="#001F3F">' +
@@ -139,29 +169,8 @@
             template = cpTemplate,
             templateTinyTrigger = cpTinyTemplate,
             elementTinyTrigger,
-            elementColorPicker,
-            closestFunc,
-            prevFunc;
-        prevFunc = function (elem) {
-          if (elem.previousElementSibling) {
-            return elem.previousElementSibling;
-          }
-          while (elem = elem.previousSibling) {
-            if (elem.nodeType === 1) {
-              return elem;
-            }
-          }
-        };
-        closestFunc = function (elem, cls) {
-          var found = false;
-          while (elem.parent() !== undefined && found === false) {
-            if (elem.parent().hasClass(cls)) {
-              found = true;
-            }
-            elem = elem.parent();
-          }
-          return elem;
-        };
+            elementColorPicker;
+
         if (scope.tinyTrigger !== undefined && scope.tinyTrigger === 'true') {
           templateTinyTrigger = templateTinyTrigger.replace('picker-icon', 'picker-icon trigger');
           elementTinyTrigger = $compile(templateTinyTrigger)(scope);
@@ -169,13 +178,14 @@
 
           template = templateHidden + template;
           elementColorPicker = angular.element(template);
+          
           elementColorPicker.find('cp-color').on('click', function (ev) {
             ngModel.$setViewValue(angular.element(ev.target).attr('color'));
           });
           angular.element(document.body).append(elementColorPicker);
 
           elementTinyTrigger.bind("click", function (ev) {
-            var wrapper = closestFunc(angular.element(ev.target), 'color-picker-wrapper'),
+            var wrapper = closest(angular.element(ev.target), 'color-picker-wrapper'),
                 top = wrapper[0].getBoundingClientRect().top,
                 height = wrapper[0].getBoundingClientRect().height;
             top = top + $window.pageYOffset;
@@ -218,8 +228,8 @@
             element.after(elementTinyTrigger);
             elementTinyTrigger.bind("click", function (ev) {
               //show color picker beneath the input
-              var $wrapper = closestFunc(angular.element(ev.target), 'color-picker-wrapper'),
-                  wrapperPrev = prevFunc($wrapper[0]),
+              var $wrapper = closest(angular.element(ev.target), 'color-picker-wrapper'),
+                  wrapperPrev = previous($wrapper[0]),
                   top = wrapperPrev.getBoundingClientRect().top,
                   height = wrapperPrev.getBoundingClientRect().height;
               top = top + $window.pageYOffset;
