@@ -43,8 +43,7 @@
   }
 
   function getRect(e) {
-    var rect = e.getBoundingClientRect();
-    return {height: rect.height, top: rect.top, left: rect.left};
+    return e.getBoundingClientRect();
   }
 
 
@@ -114,26 +113,19 @@
   function PickerDriver(){
   }
   PickerDriver.prototype.init = DriverInit;
-  PickerDriver.prototype.bindClick = function click(ngModel, d){
-    // TODO: remove element;
+  PickerDriver.prototype.bindClick = function click(ngModel, stop, cont){
     this.$el.find('cp-color').on('click', function (ev) {
       var color = angular.element(ev.target).attr('color');
       ngModel.$setViewValue(color);
-      d.syncColor(color);
-    }.bind(this));
-  };
-  function TPickerDriver(){
-  }
-  TPickerDriver.prototype.init = DriverInit;
-  TPickerDriver.prototype.bindClick = function click(ngModel, stop){
-    this.$el.find('cp-color').on('click', function (ev) {
-      ngModel.$setViewValue(angular.element(ev.target).attr('color'));
+      if (cont) {
+        cont(color);
+      }
       if(stop){
         ev.stopPropagation();
       }
     });
   };
-  TPickerDriver.prototype.activate = function activate(top, left, height){
+  PickerDriver.prototype.activate = function activate(top, left, height){
     this.$el.removeClass('hide');
     this.$el[0].style.top = top + height + 'px';
     this.$el[0].style.left = left + 'px';
@@ -293,7 +285,7 @@
           mutator.replaceWith(d, td);
 
           template = templateHidden + template;
-          pd = mutator.fromElement(TPickerDriver, angular.element(template));
+          pd = mutator.fromElement(PickerDriver, angular.element(template));
           pd.bindClick(ngModel, false);
           mutator.append(bd, pd);
           td.bindClick(pd);
@@ -302,7 +294,9 @@
 
             template = templateHidden + template;
             pd = mutator.fromElement(PickerDriver, angular.element(template));
-            pd.bindClick(ngModel, d);
+            pd.bindClick(ngModel, true, function(color){
+              d.syncColor(color);
+            });
             mutator.append(bd, pd);
             d.bindClick(pd);
 
@@ -314,7 +308,7 @@
           } else {
             //replace element with the color picker
             template = templateInline + template;
-            mutator.fromElement(TPickerDriver, angular.element(template));
+            pd = mutator.fromElement(PickerDriver, angular.element(template));
             mutator.replaceWith(d, pd);
             pd.bindClick(ngModel, true);
           }
