@@ -74,15 +74,28 @@
     return new FN().init(el, this.$window, this.scope);
   };
 
+  /*
+  strtructure
+  ----------------------------------------
+
+  ::
+
+    bd[BodyDriver]
+      d[Driver] <- replace - td[TriggerDriver, button]
+
+      pd[PickerDriver, modal dialog]
+
+  */
+
   function Driver(){
   }
   Driver.prototype.init = DriverInit;
   Driver.prototype.bindAction = function action(typ, pd){
     this.$el.bind(typ, function (ev) {
-      //show color picker beneath the input
       var rect = getRect(ev.target);
       var top = rect.top + this.$window.pageYOffset;
-      pd.activate(top, rect.left, rect.height);
+
+      pd.show(top, rect.left, rect.height);
       ev.stopPropagation();
     }.bind(this));
   };
@@ -98,16 +111,18 @@
   }
   BodyDriver.prototype.init = DriverInit;
   BodyDriver.prototype.bindAction = function action(typ){
-    //when clicking somewhere on the screen / body -> hide the color picker
     this.$el.bind(typ, function () {
-      var i,
-          docChildren = this.$el.children();
-      for (i = 0; i < docChildren.length; i++) {
-        if (docChildren[i].className.indexOf('color-picker-wrapper body') !== -1) {
-          angular.element(docChildren[i]).addClass('hide');
-        }
-      }
+      this.hide();
     }.bind(this));
+  };
+  BodyDriver.prototype.hide = function hide(){
+    var i,
+        docChildren = this.$el.children();
+    for (i = 0; i < docChildren.length; i++) {
+      if (docChildren[i].className.indexOf('color-picker-wrapper body') !== -1) {
+        angular.element(docChildren[i]).addClass('hide');
+      }
+    }
   };
 
   function PickerDriver(){
@@ -118,6 +133,7 @@
     this.$el.find('cp-color').on(typ, function (ev) {
       var color = angular.element(ev.target).attr('color');
       ngModel.$setViewValue(color);
+
       if (opts.cont) {
         opts.cont(color);
       }
@@ -126,7 +142,7 @@
       }
     });
   };
-  PickerDriver.prototype.activate = function activate(top, left, height){
+  PickerDriver.prototype.show = function show(top, left, height){
     this.$el.removeClass('hide');
     this.$el[0].style.top = top + height + 'px';
     this.$el[0].style.left = left + 'px';
@@ -145,7 +161,8 @@
       }
       var rect = getRect(wrapper[0]);
       var top = rect.top + this.$window.pageYOffset;
-      pd.activate(top, rect.left, rect.height);
+
+      pd.show(top, rect.left, rect.height);
       ev.stopPropagation();
     }.bind(this));
   };
@@ -292,6 +309,7 @@
               d.syncColor(color);
             }});
             mutator.append(bd, pd);
+            //show color picker beneath the input
             d.bindAction('click', pd);
 
             td = mutator.fromTemplate(TriggerDriver, templateTinyTrigger);
@@ -310,6 +328,7 @@
             pd.bindAction('click', ngModel, {propagate: false});
           }
         }
+        //when clicking somewhere on the screen / body -> hide the color picker
         bd.bindAction('click');
       }
     };
