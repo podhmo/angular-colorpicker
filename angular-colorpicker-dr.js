@@ -49,30 +49,30 @@
   }
 
 
-  function DriverInit($el, $window, scope){
+  function ViewInit($el, $window, scope){
     this.$el = $el;
     this.$window = $window;
     this.scope = scope;
     return this;
   }
 
-  function DriverMutator($compile, $window, scope){
+  function ViewMutator($compile, $window, scope){
     this.$compile = $compile;
     this.$window = $window;
     this.scope = scope;
   }
 
-  DriverMutator.prototype.append = function(srcDriver, targetDriver){
-    srcDriver.$el.append(targetDriver.$el);
+  ViewMutator.prototype.append = function(srcView, targetView){
+    srcView.$el.append(targetView.$el);
   };
-  DriverMutator.prototype.replaceWith = function(srcDriver, targetDriver){
-    srcDriver.$el.replaceWith(targetDriver.$el);
+  ViewMutator.prototype.replaceWith = function(srcView, targetView){
+    srcView.$el.replaceWith(targetView.$el);
   };
-  DriverMutator.prototype.fromTemplate = function(FN, template){
+  ViewMutator.prototype.fromTemplate = function(FN, template){
     var el = this.$compile(template)(this.scope);
     return this.fromElement(FN, el);
   };
-  DriverMutator.prototype.fromElement = function(FN, el){
+  ViewMutator.prototype.fromElement = function(FN, el){
     return new FN().init(el, this.$window, this.scope);
   };
 
@@ -82,17 +82,17 @@
 
   ::
 
-    bd[BodyDriver]
-      d[Driver] <- replace - td[TriggerDriver, button]
+    bd[BodyView]
+      d[View] <- replace - td[TriggerView, button]
 
-      pd[PickerDriver, modal dialog]
+      pd[PickerView, modal dialog]
 
   */
 
-  function Driver(){
+  function View(){
   }
-  Driver.prototype.init = DriverInit;
-  Driver.prototype.bindAction = function action(typ, pd){
+  View.prototype.init = ViewInit;
+  View.prototype.bindAction = function action(typ, pd){
     this.$el.bind(typ, function (ev) {
       var rect = getRect(ev.target);
       var top = rect.top + this.$window.pageYOffset;
@@ -101,7 +101,7 @@
       ev.stopPropagation();
     }.bind(this));
   };
-  Driver.prototype.syncColor = function syncColor(color){
+  View.prototype.syncColor = function syncColor(color){
     if (this.scope.colorMe !== undefined && this.scope.colorMe === 'true') {
       this.$el[0].style.backgroundColor = color;
     } else {
@@ -109,15 +109,15 @@
     }
   };
 
-  function BodyDriver(){
+  function BodyView(){
   }
-  BodyDriver.prototype.init = DriverInit;
-  BodyDriver.prototype.bindAction = function action(typ){
+  BodyView.prototype.init = ViewInit;
+  BodyView.prototype.bindAction = function action(typ){
     this.$el.bind(typ, function () {
       this.hide();
     }.bind(this));
   };
-  BodyDriver.prototype.hide = function hide(){
+  BodyView.prototype.hide = function hide(){
     var i,
         docChildren = this.$el.children();
     for (i = 0; i < docChildren.length; i++) {
@@ -127,11 +127,11 @@
     }
   };
 
-  function PickerDriver(){
+  function PickerView(){
   }
-  PickerDriver.prototype.init = DriverInit;
+  PickerView.prototype.init = ViewInit;
   // opts = {cont: Function, propagate: boolean}
-  PickerDriver.prototype.bindAction = function action(typ, ngModel, opts){
+  PickerView.prototype.bindAction = function action(typ, ngModel, opts){
     this.$el.find('cp-color').on(typ, function (ev) {
       var color = angular.element(ev.target).attr('color');
       ngModel.$setViewValue(color);
@@ -144,18 +144,18 @@
       }
     });
   };
-  PickerDriver.prototype.show = function show(top, left, height){
+  PickerView.prototype.show = function show(top, left, height){
     this.$el.removeClass('hide');
     this.$el[0].style.top = top + height + 'px';
     this.$el[0].style.left = left + 'px';
   };
 
-  function TriggerDriver(){
+  function TriggerView(){
   }
-  TriggerDriver.prototype.init = DriverInit;
+  TriggerView.prototype.init = ViewInit;
 
   // opts = {findWrapper: Function}
-  TriggerDriver.prototype.bindAction = function action(typ, pd, opts) {
+  TriggerView.prototype.bindAction = function action(typ, pd, opts) {
     this.$el.bind(typ, function (ev) {
       var wrapper = angular.element(ev.target);
       if (opts.findWrapper) {
@@ -294,17 +294,17 @@
           var templateTinyTrigger = tmpls[0];
           var template = tmpls[1];
 
-          var mutator = new DriverMutator($compile, $window, scope);
-          var d = new Driver().init(element, $window, scope);
+          var mutator = new ViewMutator($compile, $window, scope);
+          var d = new View().init(element, $window, scope);
           var pd,td;
-          var bd = mutator.fromElement(BodyDriver, angular.element(document.body));
+          var bd = mutator.fromElement(BodyView, angular.element(document.body));
           if (scope.tinyTrigger !== undefined && scope.tinyTrigger === 'true') {
             templateTinyTrigger = templateTinyTrigger.replace('picker-icon', 'picker-icon trigger');
-            td = mutator.fromTemplate(TriggerDriver, templateTinyTrigger);
+            td = mutator.fromTemplate(TriggerView, templateTinyTrigger);
             mutator.replaceWith(d, td);
 
             template = templateHidden + template;
-            pd = mutator.fromElement(PickerDriver, angular.element(template));
+            pd = mutator.fromElement(PickerView, angular.element(template));
             pd.bindAction('click', ngModel, {propagate: true});
             mutator.append(bd, pd);
             td.bindAction('click', pd, {findWrapper: function($target) {
@@ -314,7 +314,7 @@
             if (element[0].tagName === 'INPUT') {
 
               template = templateHidden + template;
-              pd = mutator.fromElement(PickerDriver, angular.element(template));
+              pd = mutator.fromElement(PickerView, angular.element(template));
               pd.bindAction('click', ngModel, {propagate: false, cont: function(color){
                 d.syncColor(color);
               }});
@@ -322,7 +322,7 @@
               //show color picker beneath the input
               d.bindAction('click', pd);
 
-              td = mutator.fromTemplate(TriggerDriver, templateTinyTrigger);
+              td = mutator.fromTemplate(TriggerView, templateTinyTrigger);
               mutator.append(d, td);
               //show color picker beneath the input
               td.bindAction('click', pd, {findWrapper: function($target){
@@ -333,7 +333,7 @@
             } else {
               //replace element with the color picker
               template = templateInline + template;
-              pd = mutator.fromElement(PickerDriver, angular.element(template));
+              pd = mutator.fromElement(PickerView, angular.element(template));
               mutator.replaceWith(d, pd);
               pd.bindAction('click', ngModel, {propagate: false});
             }
