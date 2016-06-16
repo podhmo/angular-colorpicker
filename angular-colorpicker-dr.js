@@ -42,14 +42,24 @@
     return elem;
   }
 
+  function DriverInit($window, $el, scope){
+    this.$window = $window;
+    this.$el = $el;
+    this.scope = scope;
+    return this;
+  }
+
   function Driver(){
-  };
-  Driver.prototype.init = function init(){
   }
-  function TinyDriver(){
-  };
-  TinyDriver.prototype.init = function init(){
+  Driver.prototype.init = DriverInit;
+
+  function PickerDriver(){
   }
+  PickerDriver.prototype.init = DriverInit;
+
+  function TriggerDriver(){
+  }
+  TriggerDriver.prototype.init = DriverInit;
 
   var cpTemplate = '<div class="color-picker-row-wrapper">' +
       '<div class="color-picker-row">' +
@@ -170,16 +180,17 @@
             templateTinyTrigger = cpTinyTemplate,
             elementTinyTrigger,
             elementColorPicker;
-
+        var d = new Driver().init(element, $window, scope);
+        var pd; 
         if (scope.tinyTrigger !== undefined && scope.tinyTrigger === 'true') {
           templateTinyTrigger = templateTinyTrigger.replace('picker-icon', 'picker-icon trigger');
           elementTinyTrigger = $compile(templateTinyTrigger)(scope);
-          element.replaceWith(elementTinyTrigger);
+          d.$el.replaceWith(elementTinyTrigger);
 
           template = templateHidden + template;
           elementColorPicker = angular.element(template);
-          
-          elementColorPicker.find('cp-color').on('click', function (ev) {
+          pd = new PickerDriver().init(elementColorPicker, $window, scope);
+          pd.$el.find('cp-color').on('click', function (ev) {
             ngModel.$setViewValue(angular.element(ev.target).attr('color'));
           });
           angular.element(document.body).append(elementColorPicker);
@@ -201,6 +212,7 @@
 
             template = templateHidden + template;
             elementColorPicker = angular.element(template);
+            pd = new PickerDriver().init(elementColorPicker, $window, scope);
             elementColorPicker.find('cp-color').on('click', function (ev) {
               var color = angular.element(ev.target).attr('color');
               ngModel.$setViewValue(color);
