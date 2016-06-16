@@ -216,7 +216,7 @@
       '</div>' +
       '</div>' +
       '</div>';
-  var cpTinyTemplate = '<div class="color-picker-wrapper picker-icon">' +
+  var cpTriggerTemplate = '<div class="color-picker-wrapper picker-icon">' +
       '<div class="color-picker-row-wrapper">' +
       '<div class="color-picker-row">' +
       '<cp-color class="color-picker navy">' +
@@ -267,12 +267,16 @@
       '</div>' +
       '</div>';
 
-  var directive = function ($compile, $document, $window) {
+  var TRIGGER_TEMPLATE_NAME = 'template/color-picker-trigger.html',
+      TEMPLATE_NAME = 'template/color-picker.html';
+
+  var directive = function ($compile, $document, $window, $templateCache, $templateRequest, $q) {
+    $templateCache.put(TRIGGER_TEMPLATE_NAME, cpTriggerTemplate);
+    $templateCache.put(TEMPLATE_NAME, cpTemplate);
     return {
       restrict: 'A',
       require: 'ngModel',
       scope: {
-        changeColor: "&",
         tinyTrigger: "@",
         colorMe: "@",
         ngModel : '='
@@ -282,57 +286,62 @@
         var content,
             templateHidden = '<div class="color-picker-wrapper body hide">',
             templateInline = '<div class="color-picker-wrapper">',
-            template = cpTemplate,
-            templateTinyTrigger = cpTinyTemplate;
-        var mutator = new DriverMutator($compile, $window, scope);
-        var d = new Driver().init(element, $window, scope);
-        var pd,td;
-        var bd = mutator.fromElement(BodyDriver, angular.element(document.body));
-        if (scope.tinyTrigger !== undefined && scope.tinyTrigger === 'true') {
-          templateTinyTrigger = templateTinyTrigger.replace('picker-icon', 'picker-icon trigger');
-          td = mutator.fromTemplate(TriggerDriver, templateTinyTrigger);
-          mutator.replaceWith(d, td);
+            requests = [$templateRequest(TRIGGER_TEMPLATE_NAME), $templateRequest(TEMPLATE_NAME)];
 
-          template = templateHidden + template;
-          pd = mutator.fromElement(PickerDriver, angular.element(template));
-          pd.bindAction('click', ngModel, {propagate: true});
-          mutator.append(bd, pd);
-          td.bindAction('click', pd, {findWrapper: function($target) {
-            return closest($target, 'color-picker-wrapper');
-          }});
-        } else {
-          if (element[0].tagName === 'INPUT') {
+        $q.all(requests).then(function(tmpls){
+          var templateTinyTrigger = tmpls[0];
+          var template = tmpls[1];
+
+          var mutator = new DriverMutator($compile, $window, scope);
+          var d = new Driver().init(element, $window, scope);
+          var pd,td;
+          var bd = mutator.fromElement(BodyDriver, angular.element(document.body));
+          if (scope.tinyTrigger !== undefined && scope.tinyTrigger === 'true') {
+            templateTinyTrigger = templateTinyTrigger.replace('picker-icon', 'picker-icon trigger');
+            td = mutator.fromTemplate(TriggerDriver, templateTinyTrigger);
+            mutator.replaceWith(d, td);
 
             template = templateHidden + template;
             pd = mutator.fromElement(PickerDriver, angular.element(template));
-            pd.bindAction('click', ngModel, {propagate: false, cont: function(color){
-              d.syncColor(color);
-            }});
+            pd.bindAction('click', ngModel, {propagate: true});
             mutator.append(bd, pd);
-            //show color picker beneath the input
-            d.bindAction('click', pd);
-
-            td = mutator.fromTemplate(TriggerDriver, templateTinyTrigger);
-            mutator.append(d, td);
-            //show color picker beneath the input
-            td.bindAction('click', pd, {findWrapper: function($target){
-              var $wrapper = closest($target, 'color-picker-wrapper');
-              return previous($wrapper[0]);
+            td.bindAction('click', pd, {findWrapper: function($target) {
+              return closest($target, 'color-picker-wrapper');
             }});
-            $compile(content)(scope);
           } else {
-            //replace element with the color picker
-            template = templateInline + template;
-            pd = mutator.fromElement(PickerDriver, angular.element(template));
-            mutator.replaceWith(d, pd);
-            pd.bindAction('click', ngModel, {propagate: false});
+            if (element[0].tagName === 'INPUT') {
+
+              template = templateHidden + template;
+              pd = mutator.fromElement(PickerDriver, angular.element(template));
+              pd.bindAction('click', ngModel, {propagate: false, cont: function(color){
+                d.syncColor(color);
+              }});
+              mutator.append(bd, pd);
+              //show color picker beneath the input
+              d.bindAction('click', pd);
+
+              td = mutator.fromTemplate(TriggerDriver, templateTinyTrigger);
+              mutator.append(d, td);
+              //show color picker beneath the input
+              td.bindAction('click', pd, {findWrapper: function($target){
+                var $wrapper = closest($target, 'color-picker-wrapper');
+                return previous($wrapper[0]);
+              }});
+              $compile(content)(scope);
+            } else {
+              //replace element with the color picker
+              template = templateInline + template;
+              pd = mutator.fromElement(PickerDriver, angular.element(template));
+              mutator.replaceWith(d, pd);
+              pd.bindAction('click', ngModel, {propagate: false});
+            }
           }
-        }
-        //when clicking somewhere on the screen / body -> hide the color picker
-        bd.bindAction('click');
+          //when clicking somewhere on the screen / body -> hide the color picker
+          bd.bindAction('click');
+        });
       }
     };
   };
-  directive.$inject = ["$compile","$document", "$window"];
+  directive.$inject = ["$compile","$document", "$window", "$templateCache", "$templateRequest", "$q"];
   angular.module('colorpicker-dr', []).directive('colorPicker', directive);
 }());
